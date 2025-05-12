@@ -1,7 +1,9 @@
 import prisma from "../../../../lib/prisma";
+import { NextResponse } from "next/server";
 
-export default async function GET() {
+
+export async function GET() {
   const events = await prisma.event.findMany();
 
-  console.log(events);
+  return NextResponse.json(events);
 }
