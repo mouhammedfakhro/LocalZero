@@ -10,7 +10,7 @@ export default function Home() {
           <p className="text-muted-foreground">
             Collaborate with neighbors on eco-friendly initiatives
           </p>
-        </div>
+        </div>  
         <AuthTabs />
       </div>
     </div>

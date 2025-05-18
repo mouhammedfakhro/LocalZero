@@ -2,11 +2,14 @@
 import React, { useEffect } from "react";
 import { useState } from "react";
 import axios from "axios";
+import { NameValidator } from "../interface/core/validation/NameValidator";
+import { EmailValidator } from "../interface/core/validation/EmailValidator";
+import { PasswordValidator } from "../interface/core/validation/PasswordValidator";
+import { LocationValidator } from "../interface/core/validation/LocationValidator";
 
-import { NameValidator } from "../../app/core/validation/NameValidator";
-import { EmailValidator } from "../../app/core/validation/EmailValidator";
-import { PasswordValidator } from "../../app/core/validation/PasswordValidator";
-import { LocationValidator } from "../../app/core/validation/LocationValidator";
+import { FormProvider, useForm } from "react-hook-form";
+
+import auth from "@/service/auth";
 
 const AuthTabs = () => {
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
@@ -21,10 +24,21 @@ const AuthTabs = () => {
     []
   );
 
+  const methods = useForm();
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
+
     console.log("Login attempt", { loginEmail, loginPassword });
   };
+
+  async function onSubmit(user: any) {
+    try {
+      await auth.login(user);
+    } catch (error) {
+      console.log("");
+    }
+  }
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,7 +54,10 @@ const AuthTabs = () => {
     const emailValidator = new EmailValidator();
     const passwordValidator = new PasswordValidator();
     const locationValidator = new LocationValidator();
-    nameValidator.setNext(locationValidator).setNext(emailValidator).setNext(passwordValidator)
+    nameValidator
+      .setNext(locationValidator)
+      .setNext(emailValidator)
+      .setNext(passwordValidator);
 
     const error = await nameValidator.handle(data);
 
@@ -87,45 +104,47 @@ const AuthTabs = () => {
       </div>
 
       {activeTab === "login" && (
-        <form onSubmit={handleLogin} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1" htmlFor="email">
-              Email
-            </label>
-            <input
-              id="email"
-              type="email"
-              className="w-full border rounded px-3 py-2"
-              value={loginEmail}
-              onChange={(e) => setLoginEmail(e.target.value)}
-              required
-            />
-          </div>
+        <FormProvider {...methods}>
+          <form onSubmit={onSubmit} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1" htmlFor="email">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                className="w-full border rounded px-3 py-2"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                required
+              />
+            </div>
 
-          <div>
-            <label
-              className="block text-sm font-medium mb-1"
-              htmlFor="password"
+            <div>
+              <label
+                className="block text-sm font-medium mb-1"
+                htmlFor="password"
+              >
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                className="w-full border rounded px-3 py-2"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                required
+              />
+            </div>
+
+            <button
+              type="submit"
+              className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
             >
-              Password
-            </label>
-            <input
-              id="password"
-              type="password"
-              className="w-full border rounded px-3 py-2"
-              value={loginPassword}
-              onChange={(e) => setLoginPassword(e.target.value)}
-              required
-            />
-          </div>
-
-          <button
-            type="submit"
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700"
-          >
-            Login
-          </button>
-        </form>
+              Login
+            </button>
+          </form>
+        </FormProvider>
       )}
 
       {activeTab === "register" && (

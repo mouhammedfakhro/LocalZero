@@ -26,12 +26,14 @@ model User {
   role     Role
 
   createdEvents  Event[]
-  neighborhood   Neighborhood @relation(fields: [id], references: [id])
+  neighborhood   Neighborhood @relation(fields: [neighborhoodId], references: [id])
   neighborhoodId Int
 
   joinedEvents Event[]     @relation("JoinedEvents")
   Comment      Comment[]
   EcoAction    EcoAction[]
+
+  likedComments Comment[] @relation("CommentLikes")
 }
 
 model Neighborhood {
@@ -42,16 +44,28 @@ model Neighborhood {
 }
 
 model Event {
-  id       Int     @id @default(autoincrement())
-  title    String
-  location String
-  category String
-  isPublic Boolean @default(true)
+  id          Int      @id @default(autoincrement())
+  createdAt   DateTime @default(now())
+  title       String
+  location    String
+  description String?
+  isPublic    Boolean  @default(true)
 
   creator   User @relation(fields: [creatorId], references: [id])
   creatorId Int
 
   participations User[] @relation("JoinedEvents")
+
+  comments Comment[]
+  updates  PostUpdate[]
+}
+
+model PostUpdate {
+  id        Int      @id @default(autoincrement())
+  content   String
+  createdAt DateTime @default(now())
+  event     Event?   @relation(fields: [eventId], references: [id])
+  eventId   Int?
 }
 
 model Comment {
@@ -61,11 +75,12 @@ model Comment {
   author   User    @relation(fields: [authorId], references: [id])
   authorId Int
 
-  parent   Comment? @relation("CommentThread", fields: [parentId], references: [id])
-  parentId Int?
-
-  replies   Comment[] @relation("CommentThread")
   createdAt DateTime  @default(now())
+
+  event   Event? @relation(fields: [eventId], references: [id])
+  eventId Int?
+
+  likedBy User[] @relation("CommentLikes")
 }
 
 model EcoAction {
