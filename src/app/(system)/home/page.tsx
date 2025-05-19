@@ -2,15 +2,13 @@
 
 import React, { useEffect, useState } from "react";
 import Post from "@/app/components/Post2";
-import { PostType } from "@/types";
 import axios from "axios";
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faClock, faMapPin } from "@fortawesome/free-solid-svg-icons";
 import { Switch } from "@headlessui/react";
 
 export default function Home() {
   const [publicPosts, setPublicPosts] = useState(true);
   const [posts, setPosts] = useState([]);
+  const [showNewForm, setShowNewForm] = useState(false);
 
   useEffect(() => {
     const fetch = async () => {
@@ -44,11 +42,55 @@ export default function Home() {
               className="pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out group-data-checked:translate-x-5"
             />
           </Switch>
+
+          <button
+            onClick={() => setShowNewForm(true)}
+            className="bg-green-600 rounded-md px-2 py-1 text-white font-bold mb-3 shadow-md cursor-pointer"
+          >
+            Create Post
+          </button>
         </div>
       </div>
       <div className="w-full h-px bg-gray-300 mt-5 px-10" />
 
       <div className="px-10 mt-6 w-full max-w-4xl space-y-2">
+        {showNewForm && (
+          <div className="fixed inset-0 bg-opacity-30 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-white w-full max-w-md p-6 rounded-lg shadow-lg relative">
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg font-semibold">New Message</h2>
+                <button
+                  className="text-sm text-gray-500 hover:underline"
+                  onClick={() => setShowNewForm(false)}
+                >
+                  Cancel
+                </button>
+              </div>
+
+              <select
+                className="w-full mb-3 border border-gray-300 rounded-md px-3 py-2 text-sm"
+              >
+                <option value="" disabled>
+                  Select a user...
+                </option>
+                
+              </select>
+
+              <textarea
+                placeholder="Write your message..."
+                rows={8}
+                className="w-full mb-4 border border-gray-300 rounded-md px-3 py-2 text-sm"
+              />
+
+              <button
+                className="bg-green-600 text-white px-4 py-2 rounded-md text-sm hover:bg-green-700"
+              >
+                Send Message
+              </button>
+            </div>
+          </div>
+        )}
+
         {filteredPosts.length > 0 ? (
           filteredPosts.map((post: any) => <Post key={post.id} post={post} />)
         ) : (

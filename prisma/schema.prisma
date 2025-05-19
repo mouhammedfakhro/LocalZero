@@ -18,6 +18,13 @@ enum Role {
   ORGANIZER
 }
 
+enum Action {
+  BIKE
+  WALK
+  BUS
+  ELECTRIC_CAR
+}
+
 model User {
   id       Int    @id @default(autoincrement())
   username String
@@ -34,6 +41,11 @@ model User {
   EcoAction    EcoAction[]
 
   likedComments Comment[] @relation("CommentLikes")
+  Message       Message[]
+
+  sentMessages     Message[]      @relation("SentMessages")
+  receivedMessages Message[]      @relation("ReceivedMessages")
+  conversations    Conversation[] @relation("ConversationParticipants")
 }
 
 model Neighborhood {
@@ -75,7 +87,7 @@ model Comment {
   author   User    @relation(fields: [authorId], references: [id])
   authorId Int
 
-  createdAt DateTime  @default(now())
+  createdAt DateTime @default(now())
 
   event   Event? @relation(fields: [eventId], references: [id])
   eventId Int?
@@ -91,11 +103,39 @@ model EcoAction {
   userId      Int
   createdAt   DateTime @default(now())
 
-  log         ActionLog @relation(fields: [actionLogId], references: [id])
-  actionLogId Int
+  description String?
+
+  action Action
 }
 
-model ActionLog {
-  id        Int         @id @default(autoincrement())
-  EcoAction EcoAction[]
+model Message {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+
+  senderId Int
+
+  receiverId Int
+
+  sender   User @relation("SentMessages", fields: [senderId], references: [id])
+  receiver User @relation("ReceivedMessages", fields: [receiverId], references: [id])
+
+  message String
+
+  User   User? @relation(fields: [userId], references: [id])
+  userId Int?
+
+  conversation   Conversation @relation(fields: [conversationId], references: [id])
+  conversationId Int
+
+  read Boolean @default(false)
+}
+
+model Conversation {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  participants User[] @relation("ConversationParticipants")
+
+  messages Message[]
 }
