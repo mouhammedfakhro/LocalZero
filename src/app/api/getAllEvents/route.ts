@@ -11,10 +11,18 @@ export async function GET() {
           },
           include: {
             author: true,
+            likedBy: true,
           }
         },
-        updates: true,
+        updates: {
+          orderBy: {
+            createdAt: "desc",
+          }
+        },
         participations: true,
+      },
+      orderBy: {
+        createdAt: "desc",
       }
     });
     return NextResponse.json(events);

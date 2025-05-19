@@ -23,8 +23,14 @@ export async function GET(req: Request) {
         },
         include: {
           author: true,
+          likedBy: true,
         },
       },
+      updates: {
+        orderBy: {
+          createdAt: "desc",
+        }
+      }
     },
   });
 

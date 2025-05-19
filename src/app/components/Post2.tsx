@@ -17,6 +17,7 @@ export type ExtendedEvent = Prisma.EventGetPayload<{
       };
       include: {
         author: true;
+        likedBy: true;
       };
     };
     updates: true;
@@ -29,8 +30,11 @@ export default function Post({ post }: { post: ExtendedEvent }) {
   const [commentsOpened, setCommentsOpened] = useState(false);
   const [updatesOpened, setUpdatesOpened] = useState(false);
   const [postInputText, setPostInputText] = useState("");
+  const [updateInputText, setUpdateInputText] = useState("");
 
-  const hasJoined = eventData.participations?.some((p: any) => p.id === 1);
+  const hasJoined = eventData.participations?.some((p: any) => p.id === 1) || post.participations?.some((p: any) => p.id === 1)
+
+  const isOwner = true;
 
   async function refetchEvent() {
     try {
@@ -49,6 +53,7 @@ export default function Post({ post }: { post: ExtendedEvent }) {
         userId: 1,
       });
       toast.success("You have joined initiative!");
+      await refetchEvent();
     } catch (error) {
       console.error("Error joining initiative:", error);
     }
@@ -68,18 +73,43 @@ export default function Post({ post }: { post: ExtendedEvent }) {
     }
   }
 
-  function likeComment(commentId: number) {
-    console.log(`Liked comment with ID: ${commentId}`);
-    // TODO: Implement like logic
+  async function updateSubmit() {
+    try {
+      console.log("New comment:", updateInputText);
+      await axios.post("/api/update", {
+        eventId: post.id,
+        userId: 1,
+        content: updateInputText,
+      });
+      await refetchEvent();
+    } catch (error) {
+      console.log("Error sending comment: ", error);
+    }
+  }
+
+  async function likeComment(commentId: number) {
+    try {
+      await axios.put(`/api/likeComment?userId=${1}&commentId=${commentId}`);
+      await refetchEvent();
+    } catch (error) {
+      console.log("Error sending comment: ", error);
+    }
   }
 
   function toggleComments() {
-    setCommentsOpened(!commentsOpened);
-    setUpdatesOpened(false);
+    setCommentsOpened((prev) => {
+      const next = !prev;
+      if (next) setUpdatesOpened(false);
+      return next;
+    });
   }
+
   function toggleUpdates() {
-    setUpdatesOpened(!updatesOpened);
-    setCommentsOpened(false);
+    setUpdatesOpened((prev) => {
+      const next = !prev;
+      if (next) setCommentsOpened(false);
+      return next;
+    });
   }
 
   return (
@@ -140,7 +170,7 @@ export default function Post({ post }: { post: ExtendedEvent }) {
             onClick={toggleUpdates}
             className="border border-gray-300 px-3 py-1 text-sm rounded hover:bg-gray-100"
           >
-            {commentsOpened ? "Hide updates" : "Show updates"}
+            {updatesOpened ? "Hide updates" : "Show updates"}
           </button>
         </div>
 
@@ -163,60 +193,90 @@ export default function Post({ post }: { post: ExtendedEvent }) {
               </button>
             </div>
 
-            {eventData.updates.map((comment: any) => (
-              <div key={comment.id} className="flex items-start gap-2">
-                <div className="flex-shrink-0 w-8 h-8 bg-gray-200 text-sm font-semibold rounded-full flex items-center justify-center">
-                  {comment.author?.username?.charAt(0).toUpperCase() || "?"}
-                </div>
-                <div className="flex-1">
-                  <div className="text-sm font-medium">
-                    {comment.author?.username || "Unknown"}{" "}
-                    <span className="text-gray-500 font-normal text-xs ml-1">
-                      {format(new Date(comment.createdAt), "PPP p")}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-800">{comment.content}</p>
+            {eventData.comments.map((comment: any) => {
+              const hasLiked = comment.likedBy?.some(
+                (user: any) => user.id === 1
+              ); // Replace with actual user ID logic
 
-                  <div className="mt-2 flex items-center gap-1 text-sm text-gray-600">
-                    <button
-                      onClick={() => likeComment(comment.id)}
-                      className="hover:text-red-500 transition-colors"
-                    >
-                      <FontAwesomeIcon icon={solidHeart} />
-                    </button>
-                    <span>{comment.likeCount ?? 0}</span>
+              return (
+                <div key={comment.id} className="flex items-start gap-2">
+                  <div className="flex-shrink-0 w-8 h-8 bg-gray-200 text-sm font-semibold rounded-full flex items-center justify-center">
+                    {comment.author?.username?.charAt(0).toUpperCase() || "?"}
                   </div>
-                </div>
-              </div>
-            ))}
+                  <div className="flex-1">
+                    <div className="text-sm font-medium">
+                      {comment.author?.username || "Unknown"}{" "}
+                      <span className="text-gray-500 font-normal text-xs ml-1">
+                        {format(new Date(comment.createdAt), "PPP p")}
+                      </span>
+                    </div>
+                    <p className="text-sm text-gray-800">{comment.content}</p>
 
-            {eventData.comments.map((comment: any) => (
-              <div key={comment.id} className="flex items-start gap-2">
-                <div className="flex-shrink-0 w-8 h-8 bg-gray-200 text-sm font-semibold rounded-full flex items-center justify-center">
-                  {comment.author?.username?.charAt(0).toUpperCase() || "?"}
-                </div>
-                <div className="flex-1">
-                  <div className="text-sm font-medium">
-                    {comment.author?.username || "Unknown"}{" "}
-                    <span className="text-gray-500 font-normal text-xs ml-1">
-                      {format(new Date(comment.createdAt), "PPP p")}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-800">{comment.content}</p>
-
-                  <div className="mt-2 flex items-center gap-1 text-sm text-gray-600">
-                    <button
-                      onClick={() => likeComment(comment.id)}
-                      className="hover:text-red-500 transition-colors"
-                    >
-                      <FontAwesomeIcon icon={solidHeart} />
-                    </button>
-                    <span>{comment.likeCount ?? 0}</span>
+                    <div className="mt-2 flex items-center gap-1 text-sm text-gray-600">
+                      <button
+                        onClick={() => likeComment(comment.id)}
+                        className="transition-colors cursor-pointer"
+                      >
+                        <FontAwesomeIcon
+                          icon={solidHeart}
+                          className={
+                            hasLiked ? "text-red-500" : "text-gray-400"
+                          }
+                        />
+                      </button>
+                      <span>{comment.likedBy?.length ?? 0}</span>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
+        )}
+
+        {updatesOpened && (
+          <>
+            {isOwner && (
+              <div className="flex items-start gap-2 mt-4">
+                <input
+                  type="text"
+                  placeholder="Add an update..."
+                  className="flex-1 border rounded px-3 py-2 text-sm"
+                  onChange={(e) => {
+                    setUpdateInputText(e.target.value);
+                  }}
+                />
+                <button
+                  onClick={updateSubmit}
+                  className="bg-green-600 text-white px-4 py-2 text-sm rounded hover:bg-green-700"
+                >
+                  Post
+                </button>
+              </div>
+            )}
+
+            {eventData.updates.length > 0
+              ? eventData.updates.map((comment: any) => (
+                  <div key={comment.id} className="flex items-start gap-2 mt-4">
+                    <div className="flex-shrink-0 w-8 h-8 bg-gray-200 text-sm font-semibold rounded-full flex items-center justify-center">
+                      {comment.author?.username?.charAt(0).toUpperCase() || "?"}
+                    </div>
+                    <div className="flex-1">
+                      <div className="text-sm font-medium">
+                        {comment.author?.username || "Unknown"}{" "}
+                        <span className="text-gray-500 font-normal text-xs ml-1">
+                          {format(new Date(comment.createdAt), "PPP p")}
+                        </span>
+                      </div>
+                      <p className="text-sm text-gray-800">{comment.content}</p>
+                    </div>
+                  </div>
+                ))
+              : !isOwner && (
+                  <div className="flex items-center justify-center mt-4">
+                    <h1 className="text-sm text-gray-500">No updates here.</h1>
+                  </div>
+                )}
+          </>
         )}
       </div>
     </div>
