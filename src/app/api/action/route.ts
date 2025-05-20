@@ -38,7 +38,7 @@ export async function POST(req: Request) {
         carbonSaved: carbonSavedKg,
         user: {
           connect: {
-            id: 1,
+            id: userId,
           },
         },
       },

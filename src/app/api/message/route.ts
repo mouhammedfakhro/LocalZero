@@ -8,10 +8,12 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const command = new CreateMessageCommand({
       conversationId: body.conversationId,
-      senderId: body.senderId,
+      senderId: Number(body.senderId),
       receiverId: body.receiverId,
       content: body.content,
     });
+
+    console.log(command);
 
     const message = await command.execute();
     return NextResponse.json(message);

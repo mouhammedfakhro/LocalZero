@@ -6,13 +6,16 @@ import { NameValidator } from "../interface/core/validation/NameValidator";
 import { EmailValidator } from "../interface/core/validation/EmailValidator";
 import { PasswordValidator } from "../interface/core/validation/PasswordValidator";
 import { LocationValidator } from "../interface/core/validation/LocationValidator";
-
 import { FormProvider, useForm } from "react-hook-form";
 
 import auth from "@/service/auth";
+import { RoleValidator } from "../interface/core/validation/RoleValidator";
+import { useRouter } from "next/navigation";
 
 const AuthTabs = () => {
   const [activeTab, setActiveTab] = useState<"login" | "register">("login");
+  const [registerRole, setRegisterRole] = useState("");
+  const navigate = useRouter();
 
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -23,22 +26,35 @@ const AuthTabs = () => {
   const [locations, setLocations] = useState<{ id: number; name: string }[]>(
     []
   );
+  const [loggedIn, setLoggedIn] = useState(false);
+  const [emailText, setEmailText] = useState("");
+  const [passText, setPassText] = useState("");
+
+  useEffect(() => {
+    const user = auth.getCurrentUser();
+    console.log(user);
+
+    if (user) navigate.replace("/home");
+  }, [loggedIn]);
 
   const methods = useForm();
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
 
-    console.log("Login attempt", { loginEmail, loginPassword });
-  };
-
-  async function onSubmit(user: any) {
-    try {
-      await auth.login(user);
-    } catch (error) {
-      console.log("");
+  async function loginClicked(e: React.FormEvent) {
+    e.preventDefault(); // Prevents full page refresh
+  
+    if (!emailText || !passText) {
+      alert("Please fill in email and password fields.");
+    } else {
+      try {
+        await auth.login(emailText, passText);
+        navigate.push("/home");
+      } catch (error) {
+        alert("Incorrect email or password");
+      }
     }
   }
+  
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -48,14 +64,17 @@ const AuthTabs = () => {
       email: registerEmail,
       password: registerPassword,
       location: registerLocation,
+      role: registerRole,
     };
 
     const nameValidator = new NameValidator();
     const emailValidator = new EmailValidator();
     const passwordValidator = new PasswordValidator();
     const locationValidator = new LocationValidator();
+    const roleValidator = new RoleValidator();
     nameValidator
       .setNext(locationValidator)
+      .setNext(roleValidator)
       .setNext(emailValidator)
       .setNext(passwordValidator);
 
@@ -64,6 +83,15 @@ const AuthTabs = () => {
     if (error) {
       alert(error);
       return;
+    }
+
+    try {
+      const response = await axios.post("/api/auth/register", data);
+      console.log("User registered:", response.data);
+      alert("Registration successful!");
+    } catch (err) {
+      console.error("Registration failed:", err);
+      alert("Something went wrong during registration.");
     }
   };
 
@@ -105,17 +133,18 @@ const AuthTabs = () => {
 
       {activeTab === "login" && (
         <FormProvider {...methods}>
-          <form onSubmit={onSubmit} className="space-y-4">
+          <form onSubmit={loginClicked} className="space-y-4">
             <div>
               <label className="block text-sm font-medium mb-1" htmlFor="email">
                 Email
               </label>
               <input
+                {...methods.register("email")}
                 id="email"
                 type="email"
                 className="w-full border rounded px-3 py-2"
-                value={loginEmail}
-                onChange={(e) => setLoginEmail(e.target.value)}
+                value={emailText}
+                onChange={(e) => setEmailText(e.target.value)}
                 required
               />
             </div>
@@ -128,11 +157,12 @@ const AuthTabs = () => {
                 Password
               </label>
               <input
+                {...methods.register("password")}
                 id="password"
                 type="password"
                 className="w-full border rounded px-3 py-2"
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
+                value={passText}
+                onChange={(e) => setPassText(e.target.value)}
                 required
               />
             </div>
@@ -184,6 +214,23 @@ const AuthTabs = () => {
                   {loc.name}
                 </option>
               ))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1" htmlFor="role">
+              Role
+            </label>
+            <select
+              id="role"
+              className="w-full border rounded px-3 py-2"
+              value={registerRole}
+              onChange={(e) => setRegisterRole(e.target.value)}
+              required
+            >
+              <option value="">Select role</option>
+              <option value="ORGANIZER">Organizer</option>
+              <option value="RESIDENT">Resident</option>
             </select>
           </div>
 

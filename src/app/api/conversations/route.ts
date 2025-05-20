@@ -1,14 +1,16 @@
 import { NextResponse } from "next/server";
 import prisma from "../../../../lib/prisma";
 
-
 export async function POST(req: NextResponse) {
   try {
     const body = await req.json();
     const { senderId, recipientUsername, message } = body;
 
     if (!senderId || !recipientUsername || !message) {
-      return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Missing required fields" },
+        { status: 400 }
+      );
     }
 
     const recipient = await prisma.user.findFirst({
@@ -16,24 +18,37 @@ export async function POST(req: NextResponse) {
     });
 
     if (!recipient) {
-      return NextResponse.json({ error: "Recipient not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Recipient not found" },
+        { status: 404 }
+      );
     }
 
-    // 2. Create a conversation with both users as participants
+    const sender = await prisma.user.findFirst({
+      where: { id: Number(senderId) },
+    });
+
+    console.log("-------------");
+    console.log(sender);
+    console.log("-------------");
+
+    if (!sender) {
+      return NextResponse.json({ error: "Sender not found" }, { status: 404 });
+    }
+
     const conversation = await prisma.conversation.create({
       data: {
         participants: {
-          connect: [{ id: senderId }, { id: recipient.id }],
+          connect: [{ id: Number(senderId) }, { id: recipient.id }],
         },
       },
     });
 
-    // 3. Create the first message
     const newMessage = await prisma.message.create({
       data: {
-        senderId,
+        senderId: Number(senderId),
         receiverId: recipient.id,
-        message,
+        message: message,
         conversationId: conversation.id,
       },
     });
@@ -49,10 +64,24 @@ export async function POST(req: NextResponse) {
   }
 }
 
-
 export async function GET(req: Request) {
   try {
-    const userId = 1; // Replace with session-based user ID if available
+    console.log("Full request URL:", req.url); 
+
+    const { searchParams } = new URL(req.url);
+    const userIdParam = searchParams.get("currentUserId");
+
+    console.log("userId:", userIdParam); 
+
+
+    if (!userIdParam) {
+      return NextResponse.json({ error: "Missing userId" }, { status: 400 });
+    }
+
+    const userId = parseInt(userIdParam);
+    if (isNaN(userId)) {
+      return NextResponse.json({ error: "Invalid userId" }, { status: 400 });
+    }
 
     const conversations = await prisma.conversation.findMany({
       where: {
@@ -69,11 +98,9 @@ export async function GET(req: Request) {
         },
       },
       orderBy: {
-        updatedAt: "desc",  
+        updatedAt: "desc",
       },
     });
-
-    console.log(conversations);
 
     return NextResponse.json(conversations);
   } catch (error) {

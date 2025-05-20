@@ -5,7 +5,6 @@ export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const name = searchParams.get("location") || "";
-    console.log(name);
 
     const neighborhood = await prisma.neighborhood.findFirst({
       where: {

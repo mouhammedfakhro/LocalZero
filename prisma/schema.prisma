@@ -68,12 +68,16 @@ model Event {
 
   participations User[] @relation("JoinedEvents")
 
+  startDate DateTime?
+  endDate   DateTime?
+
   comments Comment[]
   updates  PostUpdate[]
 }
 
 model PostUpdate {
   id        Int      @id @default(autoincrement())
+  username  String?
   content   String
   createdAt DateTime @default(now())
   event     Event?   @relation(fields: [eventId], references: [id])

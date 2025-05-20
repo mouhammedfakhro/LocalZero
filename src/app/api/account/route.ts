@@ -1,25 +1,27 @@
 import bcrypt from "bcrypt";
 import prisma from "../../../../lib/prisma";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 
-export async function POST() {
+export async function POST(req: NextRequest) {
   try {
-    const password = "123";
+    const body = await req.json();
+    const { username, locationId, email, password, isOrganizer } = body;
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const user = await prisma.user.create({
       data: {
-        username: "user",
+        username,
         password: hashedPassword,
-        email: "mockuser@example.com",
-        role: "ORGANIZER",
-        neighborhoodId: 1,
+        email,
+        role: isOrganizer ? "ORGANIZER" : "RESIDENT",
+        neighborhoodId: locationId,
       },
     });
 
     return NextResponse.json(user);
   } catch (error) {
-    return NextResponse.json("user");
+    console.error("Error creating user:", error);
+    return NextResponse.json({ error: "Something went wrong" }, { status: 500 });
   }
 }

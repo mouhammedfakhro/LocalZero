@@ -1,7 +1,13 @@
 "use client";
 
 import { NavigationItem } from "@/types";
-import { faHome, faBars, faInbox } from "@fortawesome/free-solid-svg-icons";
+import { getCurrentUserId, getCurrentUserName } from "@/utils";
+import {
+  faHome,
+  faBars,
+  faInbox,
+  faRightFromBracket,
+} from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import axios from "axios";
 
@@ -25,13 +31,18 @@ const navigation: NavigationItem[] = [
     icon: faInbox,
     name: "Inbox",
   },
+  {
+    href: "/logout",
+    icon: faRightFromBracket,
+    name: "Logout",
+  },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
   const [totalUnreadMessages, setTotalUnreadMessages] = useState(0);
-
-  const userId = 1;
+  const username = getCurrentUserName();
+  const userId = getCurrentUserId();
 
   useEffect(() => {
     const fetchUnreadMessages = async () => {
@@ -50,7 +61,7 @@ export default function Sidebar() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, []);
+  }, [userId]);
 
   return (
     <aside className="flex flex-col bg-white h-screen border-r border-gray-200 transition-all duration-300 ease-in-out w-72">
@@ -62,6 +73,7 @@ export default function Sidebar() {
       </div>
 
       <div className="flex flex-col gap-2 p-4">
+        {username && <h1 className="mb-2">Logged in user: {username}</h1>}
         {navigation.map((item) => (
           <div key={item.href}>
             <Link
@@ -94,7 +106,7 @@ export default function Sidebar() {
                   {item.name}
                 </h1>
 
-                {(item.name === "Inbox" && totalUnreadMessages > 0) && (
+                {item.name === "Inbox" && totalUnreadMessages > 0 && (
                   <span className="ml-auto bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
                     {totalUnreadMessages}
                   </span>

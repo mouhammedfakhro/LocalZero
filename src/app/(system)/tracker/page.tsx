@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { Action } from "@prisma/client";
 import axios from "axios";
+import { getCurrentUserId } from "@/utils";
 
 type LoggedAction = {
   id: number;
@@ -17,10 +18,11 @@ export default function SustainabilityTracker() {
   const [description, setDescription] = useState("");
   const [actionType, setActionType] = useState<Action | "">("");
   const [actions, setActions] = useState<LoggedAction[]>([]);
+  const currentUserId = getCurrentUserId();
 
   const fetchActions = async () => {
     try {
-      const res = await axios.get("/api/action?userId=1");
+      const res = await axios.get(`/api/action?userId=${currentUserId}`);
 
       setActions(res.data);
     } catch (error) {
@@ -39,7 +41,7 @@ export default function SustainabilityTracker() {
       title,
       description,
       type: actionType,
-      userId: 1,
+      userId: currentUserId,
     };
 
     try {
@@ -49,7 +51,10 @@ export default function SustainabilityTracker() {
       setActionType("");
       await fetchActions(); // Refresh the list
     } catch (error: any) {
-      console.error("Error submitting:", error?.response?.data || error.message);
+      console.error(
+        "Error submitting:",
+        error?.response?.data || error.message
+      );
     }
   };
 
@@ -131,7 +136,9 @@ export default function SustainabilityTracker() {
                     {action.action} • {action.carbonSaved} kg CO₂ saved
                   </div>
                   {action.description && (
-                    <p className="text-gray-700 text-sm">{action.description}</p>
+                    <p className="text-gray-700 text-sm">
+                      {action.description}
+                    </p>
                   )}
                   <div className="text-xs text-gray-400 mt-1">
                     {new Date(action.createdAt).toLocaleString()}

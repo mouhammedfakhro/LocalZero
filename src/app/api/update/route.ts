@@ -6,7 +6,7 @@ const prisma = new PrismaClient();
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { eventId, content } = body;
+    const { eventId, content, username } = body;
 
     if (!eventId || !content) {
       return NextResponse.json(
@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
     const newUpdate = await prisma.postUpdate.create({
       data: {
         content,
+        username: username,
         event: {
           connect: { id: eventId },
         },

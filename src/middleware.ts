@@ -6,40 +6,48 @@ const SECRET_KEY = "lTYVm+fPZxKYjJ2NykgczptOBI+I6g8KDhnVZT1M3KE=";
 
 export async function middleware(req: NextRequest) {
   const res = NextResponse.next();
+  const { pathname } = req.nextUrl;
+
+  // Allow only the landing page
+  if (pathname === "/") {
+    return res;
+  }
 
   let token = await getCookie("token", { req, res });
-  console.log("TOKEN: ", token);
 
+  // Optional: handle token stored as JSON string
   if (token && typeof token === "string" && token.startsWith("{")) {
     try {
       const parsed = JSON.parse(token);
       token = parsed.token;
     } catch (e) {
-      console.error("Middleware: Failed to parse token JSON", e);
+      console.error("Failed to parse token JSON", e);
     }
   }
 
-  if (!token) {
-    return NextResponse.redirect(new URL("/login", req.url));
-  }
-  
-  try {
-    console.log("Middleware: Verifying token ->", token);
+  // ✅ Print token on every request
+  console.log("TOKEN in request:", token);
 
+  if (!token) {
+    return NextResponse.redirect(new URL("/", req.url));
+  }
+
+  try {
     const { payload: user } = await jwtVerify(
       token,
-      new TextEncoder().encode(SECRET_KEY!)
+      new TextEncoder().encode(SECRET_KEY)
     );
     setCookie("user", JSON.stringify(user), { req, res });
   } catch (error) {
-    console.log(error);
-    return NextResponse.redirect(new URL("/login", req.url));
+    console.error("Invalid token", error);
+    return NextResponse.redirect(new URL("/", req.url));
   }
 
   return res;
 }
 
 export const config = {
-  matcher:
-    "/((?!api/login|api/auth|api/model/*|login|reset-password|forgot-password|api/forgot-password|api/reset-password|assets|_next/static|_next/image|favicon.ico).*)",
+  matcher: [
+    "/((?!^$|_next|favicon.ico|api|assets|.*\\.svg$|.*\\.png$|.*\\.jpg$).*)",
+  ],
 };

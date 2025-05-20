@@ -1,4 +1,5 @@
 "use client";
+import { getCurrentUserId } from "@/utils";
 import axios from "axios";
 import React, { useEffect, useState } from "react";
 
@@ -27,7 +28,7 @@ export default function Inbox() {
     useState<Conversation | null>(null);
   const [newMessage, setNewMessage] = useState("");
 
-  const currentUserId = 1;
+  const currentUserId = getCurrentUserId();
 
   const [showNewForm, setShowNewForm] = useState(false);
   const [recipientUsername, setRecipientUsername] = useState("");
@@ -53,7 +54,9 @@ export default function Inbox() {
   useEffect(() => {
     const fetchConversations = async () => {
       try {
-        const res = await axios.get("/api/conversations");
+        const res = await axios.get("/api/conversations", {
+          params: { currentUserId },
+        });
         setConversations(res.data);
       } catch (err) {
         console.error("Failed to fetch conversations:", err);
@@ -71,6 +74,7 @@ export default function Inbox() {
         const res = await axios.get(
           `/api/message?conversationId=${selectedConversation.id}`
         );
+
         setSelectedConversation((prev) =>
           prev ? { ...prev, messages: res.data } : prev
         );
@@ -102,7 +106,9 @@ export default function Inbox() {
 
       console.log("Conversation created:", res.data);
 
-      const updatedConversations = await axios.get("/api/conversations");
+      const updatedConversations = await axios.get("/api/conversations", {
+        params: { currentUserId },
+      });
       setConversations(updatedConversations.data);
 
       const newConv = updatedConversations.data.find(
@@ -117,6 +123,10 @@ export default function Inbox() {
       alert(err.response?.data?.error || "Failed to create conversation.");
     }
   };
+
+  if (!currentUserId) {
+    return;
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -155,11 +165,13 @@ export default function Inbox() {
                 <option value="" disabled>
                   Select a user...
                 </option>
-                {users.map((user) => (
-                  <option key={user.id} value={user.username}>
-                    {user.username}
-                  </option>
-                ))}
+                {users
+                  .filter((user) => user.id !== currentUserId)
+                  .map((user) => (
+                    <option key={user.id} value={user.username}>
+                      {user.username}
+                    </option>
+                  ))}
               </select>
 
               <textarea
@@ -205,11 +217,9 @@ export default function Inbox() {
           </ul>
         </div>
 
-        {/* Chat panel */}
         <div className="w-2/3 flex flex-col justify-between">
           {selectedConversation ? (
             <>
-              {/* Chat header */}
               <div className="border-b px-6 py-4">
                 <h2 className="font-semibold text-lg">
                   {getRecipientName(selectedConversation)}
@@ -219,13 +229,12 @@ export default function Inbox() {
                 </p>
               </div>
 
-              {/* Messages */}
               <div className="flex-1 overflow-y-auto px-6 py-4 space-y-4 bg-gray-50">
                 {selectedConversation.messages.map((msg) => (
                   <div
                     key={msg.id}
                     className={`px-4 py-2 rounded-lg text-sm break-words ${
-                      msg.senderId === currentUserId
+                      Number(msg.senderId) === Number(currentUserId)
                         ? "bg-green-100 ml-auto text-right"
                         : "bg-white border text-left"
                     } max-w-[75%]`}
@@ -241,7 +250,6 @@ export default function Inbox() {
                 ))}
               </div>
 
-              {/* Input */}
               <div className="border-t p-4 flex items-center gap-2">
                 <input
                   value={newMessage}

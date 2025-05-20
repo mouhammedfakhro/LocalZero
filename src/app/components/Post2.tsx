@@ -5,7 +5,7 @@ import { faClock, faMapPin } from "@fortawesome/free-solid-svg-icons";
 import { useState } from "react";
 import { Prisma } from "@prisma/client";
 import { format } from "date-fns";
-import { formatDate } from "@/utils";
+import { formatDate, getCurrentUserId, getCurrentUserName } from "@/utils";
 import { toast } from "react-toastify";
 import { faHeart as solidHeart } from "@fortawesome/free-solid-svg-icons";
 
@@ -20,6 +20,7 @@ export type ExtendedEvent = Prisma.EventGetPayload<{
         likedBy: true;
       };
     };
+    creator: true,
     updates: true;
     participations: true;
   };
@@ -31,15 +32,20 @@ export default function Post({ post }: { post: ExtendedEvent }) {
   const [updatesOpened, setUpdatesOpened] = useState(false);
   const [postInputText, setPostInputText] = useState("");
   const [updateInputText, setUpdateInputText] = useState("");
+  const currentUserId = getCurrentUserId();
+  const username = getCurrentUserName();
+// TODO: SHOW EVENTS THAT ARE IN YOUR NEIGHBOURHOOD OR PUBLIC, DONT SHOW EVENTS THAT ARE NOT IN YOUR NEIGHBOURHOOD
+// 
+  const hasJoined = eventData.participations?.some((p: any) => p.id === currentUserId) || post.participations?.some((p: any) => p.id === 1)
 
-  const hasJoined = eventData.participations?.some((p: any) => p.id === 1) || post.participations?.some((p: any) => p.id === 1)
-
-  const isOwner = true;
+  const isOwner = eventData.creatorId === currentUserId;
 
   async function refetchEvent() {
     try {
       const response = await axios.get(`/api/events?eventID=${post.id}`);
       setEventData(response.data);
+      console.log("Fetched posts:", response.data);
+
     } catch (error) {
       console.log("Error re-fetching event: ", error);
     }
@@ -50,7 +56,7 @@ export default function Post({ post }: { post: ExtendedEvent }) {
       console.log("Joining initiative", post.title);
       await axios.put("/api/joinEvent", {
         eventId: post.id,
-        userId: 1,
+        userId: currentUserId,
       });
       toast.success("You have joined initiative!");
       await refetchEvent();
@@ -64,7 +70,7 @@ export default function Post({ post }: { post: ExtendedEvent }) {
       console.log("New comment:", postInputText);
       await axios.post("/api/comments", {
         eventId: post.id,
-        userId: 1,
+        userId: currentUserId,
         content: postInputText,
       });
       await refetchEvent();
@@ -78,7 +84,7 @@ export default function Post({ post }: { post: ExtendedEvent }) {
       console.log("New comment:", updateInputText);
       await axios.post("/api/update", {
         eventId: post.id,
-        userId: 1,
+        username: username,
         content: updateInputText,
       });
       await refetchEvent();
@@ -89,7 +95,7 @@ export default function Post({ post }: { post: ExtendedEvent }) {
 
   async function likeComment(commentId: number) {
     try {
-      await axios.put(`/api/likeComment?userId=${1}&commentId=${commentId}`);
+      await axios.put(`/api/likeComment?userId=${currentUserId}&commentId=${commentId}`);
       await refetchEvent();
     } catch (error) {
       console.log("Error sending comment: ", error);
@@ -111,6 +117,7 @@ export default function Post({ post }: { post: ExtendedEvent }) {
       return next;
     });
   }
+  
 
   return (
     <div className="w-full px-4">
@@ -133,11 +140,20 @@ export default function Post({ post }: { post: ExtendedEvent }) {
             <FontAwesomeIcon icon={faMapPin} className="text-red-500" />
             {eventData.location}
           </span>
-          <span className="flex items-center gap-1">
+         {/* <span className="flex items-center gap-1">
             <FontAwesomeIcon icon={faClock} />
             {formatDate(post.createdAt)}
-          </span>
+          </span> */}
+            {eventData.startDate && eventData.endDate && (
+            <span className="flex items-center gap-1 text-sm text-gray-600">
+              <FontAwesomeIcon icon={faClock} />
+              {format(new Date(eventData.startDate), "d/M")} - {format(new Date(eventData.endDate), "d/M")}
+            </span>
+          )}
+          
+          
         </div>
+        
 
         <div className="inline-block bg-gray-100 text-gray-700 text-xs font-medium px-2 py-0.5 rounded mb-3">
           <h1>Description</h1>
@@ -195,8 +211,8 @@ export default function Post({ post }: { post: ExtendedEvent }) {
 
             {eventData.comments.map((comment: any) => {
               const hasLiked = comment.likedBy?.some(
-                (user: any) => user.id === 1
-              ); // Replace with actual user ID logic
+                (user: any) => user.id === currentUserId
+              );
 
               return (
                 <div key={comment.id} className="flex items-start gap-2">
@@ -262,7 +278,7 @@ export default function Post({ post }: { post: ExtendedEvent }) {
                     </div>
                     <div className="flex-1">
                       <div className="text-sm font-medium">
-                        {comment.author?.username || "Unknown"}{" "}
+                        {comment.username || "Unknown"}{" "}
                         <span className="text-gray-500 font-normal text-xs ml-1">
                           {format(new Date(comment.createdAt), "PPP p")}
                         </span>

@@ -3,8 +3,11 @@ import { deleteCookie, getCookie, setCookie } from "cookies-next/client";
 import { TOKEN_KEY } from "@/constants";
 import { jwtDecode } from "jwt-decode";
 
-async function login(user: FormData) {
-  const { data: token } = await axios.post("/api/login", user);
+async function login(email: string, password: string) {
+  const { data: token } = await axios.post("/api/auth/login", {
+    email,
+    password,
+  });
   setCookie(TOKEN_KEY, token, {
     secure: process.env.NODE_ENV === "production",
   });

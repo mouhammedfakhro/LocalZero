@@ -20,6 +20,7 @@ export async function GET() {
           }
         },
         participations: true,
+        creator: true,
       },
       orderBy: {
         createdAt: "desc",
