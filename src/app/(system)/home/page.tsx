@@ -5,10 +5,33 @@ import Post from "@/app/components/Post2";
 import axios from "axios";
 import { Switch } from "@headlessui/react";
 
+
 export default function Home() {
   const [publicPosts, setPublicPosts] = useState(true);
-  const [posts, setPosts] = useState([]);
+  // const [posts, setPosts] = useState([]);
   const [showNewForm, setShowNewForm] = useState(false);
+  const [locations, setLocations] = useState<{ id: number; name: string }[]>(
+    []
+  );
+  const [titel, setTitel] = useState("");
+  const [description, setDescription] = useState("");
+  const [isPublic, setIsPublic] = useState(true);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [registerLocation, setRegisterLocation] = useState("");
+  const [posts, setPosts] = useState<
+    {
+
+      title: string;
+      location: string;
+      description: string;
+      isPublic: boolean;
+      startDate: string;
+      endDate: string;
+    }[]
+  >([]);
+
+
 
   useEffect(() => {
     const fetch = async () => {
@@ -21,6 +44,44 @@ export default function Home() {
     };
     fetch();
   }, []);
+
+  useEffect(() => {
+    const fetch = async () => {
+      try {
+        const response = await axios.get("/api/neighbourhoods");
+        setLocations(response.data);
+      } catch (error) {
+        console.log(error);
+      }
+    };
+    fetch();
+  }, []);
+
+
+
+  const handleCreatePost = async () => {
+    if (!titel || !registerLocation || !description || !startDate || !endDate) {
+      alert("Please fill in all fields");
+      return;
+    }
+     
+    try {
+      const response = await axios.post("/api/createEvent", {
+        title: titel,
+        location: registerLocation,
+        description: description,
+        isPublic: isPublic,
+        startDate: startDate,
+        endDate: endDate,
+      });
+      setPosts((prevPosts) => [...prevPosts, response.data]);
+      setShowNewForm(false);
+      alert("Post created successfully");
+
+    } catch (error) {
+      console.error("Error creating post:", error);
+    }
+  };
 
   const filteredPosts = publicPosts
     ? posts.filter((post: any) => post.isPublic === true)
@@ -58,7 +119,19 @@ export default function Home() {
           <div className="fixed inset-0 bg-opacity-30 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-white w-full max-w-md p-6 rounded-lg shadow-lg relative">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg font-semibold">New Message</h2>
+                <h2 className="text-lg font-semibold">New Initiative</h2>
+
+                {/*
+                1. titel 
+                2. location hämta neiborhood
+                3. description
+                4. isPublic
+                5. creator
+                6. date 
+                */}
+
+
+
                 <button
                   className="text-sm text-gray-500 hover:underline"
                   onClick={() => setShowNewForm(false)}
@@ -67,29 +140,123 @@ export default function Home() {
                 </button>
               </div>
 
-              <select
+              <div className="">
+                <textarea
+                  placeholder="Write a Title"
+                  rows={1}
+                  className="w-full mb-4 border border-gray-300 rounded-md px-3 py-2 text-sm"
+                  value={titel}
+                  onChange={(e) => setTitel(e.target.value)}
+                />
+              </div>
+
+              {/*<select
                 className="w-full mb-3 border border-gray-300 rounded-md px-3 py-2 text-sm"
               >
                 <option value="" disabled>
-                  Select a user...
+                  Select a neiborhood
                 </option>
                 
+              </select>*/}
+
+              <div>
+
+              </div>
+
+              <label
+                className="block text-sm font-medium mb-1"
+                htmlFor="location"
+              >
+                Location
+              </label>
+              <select
+                id="location"
+                className="w-full border rounded px-3 py-2"
+                value={registerLocation}
+                onChange={(e) => setRegisterLocation(e.target.value)}
+                required
+              >
+                <option value="">Select your neighborhood</option>
+
+                {locations.map((loc) => (
+                  <option key={loc.id} value={loc.name}>
+                    {loc.name}
+                  </option>
+                ))}
               </select>
 
+              <div className=" py-2">
               <textarea
-                placeholder="Write your message..."
+                placeholder="Descript your initiative"
                 rows={8}
                 className="w-full mb-4 border border-gray-300 rounded-md px-3 py-2 text-sm"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
               />
+              </div>
 
-              <button
+              <div className="mb-4">
+                <Switch.Group>
+                  <div className="justify-between space-x-4">
+                    <Switch
+                      checked={isPublic}
+                      onChange={setIsPublic}
+                      className={`${isPublic ? 'bg-green-600' : 'bg-gray-300'}
+                      relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none`}
+                    >
+                      <span
+                        className={`${isPublic ? 'translate-x-6' : 'translate-x-1'
+                          } inline-block h-4 w-4 transform rounded-full bg-white transition`}
+                      />
+                    </Switch>
+                    <span className="text-sm font-medium text-gray-700">
+                      {isPublic ? "Public event" : "Private event"}
+                    </span>
+
+                  </div>
+                </Switch.Group>
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1" htmlFor="start-date">
+                  Start Date
+                </label>
+                <input
+                  type="date"
+                  id="start-date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                    min={new Date().toISOString().split("T")[0]} 
+
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                />
+              </div>
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1" htmlFor="end-date">
+                  End Date
+                </label>
+                <input
+                  type="date"
+                  id="end-date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  min={ startDate || new Date().toISOString().split("T")[0]} 
+
+                  className="w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                />
+              </div>
+
+              <button 
                 className="bg-green-600 text-white px-4 py-2 rounded-md text-sm hover:bg-green-700"
-              >
-                Send Message
+              
+                onClick={handleCreatePost}>
+                Create Initiative 
               </button>
             </div>
           </div>
         )}
+
 
         {filteredPosts.length > 0 ? (
           filteredPosts.map((post: any) => <Post key={post.id} post={post} />)

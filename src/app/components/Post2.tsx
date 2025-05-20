@@ -31,7 +31,9 @@ export default function Post({ post }: { post: ExtendedEvent }) {
   const [updatesOpened, setUpdatesOpened] = useState(false);
   const [postInputText, setPostInputText] = useState("");
   const [updateInputText, setUpdateInputText] = useState("");
-
+  
+// TODO: SHOW EVENTS THAT ARE IN YOUR NEIGHBOURHOOD OR PUBLIC, DONT SHOW EVENTS THAT ARE NOT IN YOUR NEIGHBOURHOOD
+// 
   const hasJoined = eventData.participations?.some((p: any) => p.id === 1) || post.participations?.some((p: any) => p.id === 1)
 
   const isOwner = true;
@@ -40,6 +42,8 @@ export default function Post({ post }: { post: ExtendedEvent }) {
     try {
       const response = await axios.get(`/api/events?eventID=${post.id}`);
       setEventData(response.data);
+      console.log("Fetched posts:", response.data);
+
     } catch (error) {
       console.log("Error re-fetching event: ", error);
     }
@@ -111,6 +115,7 @@ export default function Post({ post }: { post: ExtendedEvent }) {
       return next;
     });
   }
+  
 
   return (
     <div className="w-full px-4">
@@ -133,11 +138,20 @@ export default function Post({ post }: { post: ExtendedEvent }) {
             <FontAwesomeIcon icon={faMapPin} className="text-red-500" />
             {eventData.location}
           </span>
-          <span className="flex items-center gap-1">
+         {/* <span className="flex items-center gap-1">
             <FontAwesomeIcon icon={faClock} />
             {formatDate(post.createdAt)}
-          </span>
+          </span> */}
+            {eventData.startDate && eventData.endDate && (
+            <span className="flex items-center gap-1 text-sm text-gray-600">
+              <FontAwesomeIcon icon={faClock} />
+              {format(new Date(eventData.startDate), "d/M")} - {format(new Date(eventData.endDate), "d/M")}
+            </span>
+          )}
+          
+          
         </div>
+        
 
         <div className="inline-block bg-gray-100 text-gray-700 text-xs font-medium px-2 py-0.5 rounded mb-3">
           <h1>Description</h1>

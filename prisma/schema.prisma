@@ -63,6 +63,9 @@ model Event {
   description String?
   isPublic    Boolean  @default(true)
 
+  startDate   DateTime?
+  endDate     DateTime?
+
   creator   User @relation(fields: [creatorId], references: [id])
   creatorId Int
 
