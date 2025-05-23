@@ -1,24 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "../../../../lib/prisma";
+import { ValidateNeighborhoodCommand } from "../../../../lib/commands/ValidateNeighborhoodCommand";
 
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
     const name = searchParams.get("location") || "";
 
-    const neighborhood = await prisma.neighborhood.findFirst({
-      where: {
-        name: name,
-      },
-    });
+    const command = new ValidateNeighborhoodCommand({ name });
+    const result = await command.execute();
 
-    if (neighborhood) {
-      return NextResponse.json({ isValid: true }, { status: 201 });
-    }
-
-    return NextResponse.json({ isValid: false }, { status: 201 });
-  } catch (error) {
-    console.log(error);
-    return NextResponse.json({ isValid: false, error: true, status: 401 });
+    return NextResponse.json(result, { status: 201 });
+  } catch (error: any) {
+    console.error("Location validation error:", error.message);
+    return NextResponse.json(
+      { isValid: false, error: true },
+      { status: 401 }
+    );
   }
 }

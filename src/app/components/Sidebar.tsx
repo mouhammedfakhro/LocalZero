@@ -7,6 +7,7 @@ import {
   faBars,
   faInbox,
   faRightFromBracket,
+  faBell,
 } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import axios from "axios";
@@ -36,28 +37,30 @@ const navigation: NavigationItem[] = [
     icon: faRightFromBracket,
     name: "Logout",
   },
+  {
+    href: "/notifications",
+    icon: faBell,
+    name: "Notifications",
+  },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const [totalUnreadMessages, setTotalUnreadMessages] = useState(0);
   const username = getCurrentUserName();
   const userId = getCurrentUserId();
+  const [totalUnreadNotifications, setTotalUnreadNotifications] = useState(0);
 
   useEffect(() => {
-    const fetchUnreadMessages = async () => {
+    const fetchUnreadNotifications = async () => {
       try {
-        const res = await axios.get(`/api/getUnreadMessages?userId=${userId}`);
-        setTotalUnreadMessages(res.data.length);
+        const res = await axios.get(`/api/notifications?userId=${userId}&sidebar=true`);
+        setTotalUnreadNotifications(res.data.length);
       } catch (error) {
-        console.error("Failed to fetch messages: ", error);
+        console.error("Failed to fetch notifications: ", error);
       }
     };
-
-    fetchUnreadMessages();
-
     const interval = setInterval(() => {
-      fetchUnreadMessages();
+      fetchUnreadNotifications();
     }, 1000);
 
     return () => clearInterval(interval);
@@ -74,6 +77,7 @@ export default function Sidebar() {
 
       <div className="flex flex-col gap-2 p-4">
         {username && <h1 className="mb-2">Logged in user: {username}</h1>}
+
         {navigation.map((item) => (
           <div key={item.href}>
             <Link
@@ -105,12 +109,13 @@ export default function Sidebar() {
                 >
                   {item.name}
                 </h1>
-
-                {item.name === "Inbox" && totalUnreadMessages > 0 && (
-                  <span className="ml-auto bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
-                    {totalUnreadMessages}
-                  </span>
-                )}
+                
+                {item.name === "Notifications" &&
+                  totalUnreadNotifications > 0 && (
+                    <span className="ml-auto bg-red-500 text-white text-xs font-semibold px-2 py-0.5 rounded-full">
+                      {totalUnreadNotifications}
+                    </span>
+                  )}
               </div>
             </Link>
           </div>

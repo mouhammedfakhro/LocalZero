@@ -1,38 +1,18 @@
-import bcrypt from "bcrypt";
-import prisma from "../../../../../lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import { RegisterUserCommand } from "../../../../../lib/commands/RegisterUserCommand";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { name, location, email, password, role } = body;
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    const neighborhood = await prisma.neighborhood.findFirst({
-      where: { name: location },
-    });
-
-    if (!neighborhood) {
-      return NextResponse.json("No neighborhood found.")
-    }
-
-    const user = await prisma.user.create({
-      data: {
-        username: name,
-        password: hashedPassword,
-        email: email,
-        role: role,
-        neighborhoodId: neighborhood.id,
-      },
-    });
+    const command = new RegisterUserCommand(body);
+    const user = await command.execute();
 
     return NextResponse.json(user);
-  } catch (error) {
-    console.error("Error creating user:", error);
+  } catch (error: any) {
+    console.error("Registration error:", error.message);
     return NextResponse.json(
-      { error: "Something went wrong" },
-      { status: 500 }
+      { error: error.message || "Internal server error" },
+      { status: 400 }
     );
   }
 }

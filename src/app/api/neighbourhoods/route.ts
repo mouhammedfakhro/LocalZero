@@ -1,7 +1,17 @@
 import { NextResponse } from "next/server";
-import prisma from "../../../../lib/prisma";
+import { GetAllNeighborhoodsCommand } from "../../../../lib/commands/GetAllNeighborhoodsCommand";
 
 export async function GET() {
-  const neighborhoods = await prisma.neighborhood.findMany();
-  return NextResponse.json(neighborhoods);
+  try {
+    const command = new GetAllNeighborhoodsCommand();
+    const neighborhoods = await command.execute();
+
+    return NextResponse.json(neighborhoods);
+  } catch (error: any) {
+    console.error("Error fetching neighborhoods:", error.message);
+    return NextResponse.json(
+      { error: error.message || "Failed to fetch neighborhoods" },
+      { status: 500 }
+    );
+  }
 }

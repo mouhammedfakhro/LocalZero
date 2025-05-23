@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Post from "@/app/components/Post2";
+import Post from "@/app/components/Post";
 import axios from "axios";
 import { Switch } from "@headlessui/react";
 import { getCurrentUserId, userIsOrganizer } from "@/utils";
@@ -82,7 +82,7 @@ export default function Home() {
 
   const filteredPosts = publicPosts
   ? posts 
-  : posts.filter((post) => post.isPublic);
+  : posts.filter((post) => !post.isPublic);
 
   console.log(filteredPosts);
 
