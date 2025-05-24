@@ -9,6 +9,7 @@ interface CreateEventInput {
   startDate?: string;
   endDate?: string;
   userId: number;
+  category: string;
 }
 
 export class CreateEventCommand implements ICommand {
@@ -23,6 +24,7 @@ export class CreateEventCommand implements ICommand {
       startDate,
       endDate,
       userId,
+      category,
     } = this.input;
 
     const user = await prisma.user.findFirst({
@@ -45,6 +47,7 @@ export class CreateEventCommand implements ICommand {
         creator: {
           connect: { id: userId },
         },
+        category: category,
       },
     });
 

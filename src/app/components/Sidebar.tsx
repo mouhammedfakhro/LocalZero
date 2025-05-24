@@ -33,14 +33,14 @@ const navigation: NavigationItem[] = [
     name: "Inbox",
   },
   {
-    href: "/logout",
-    icon: faRightFromBracket,
-    name: "Logout",
-  },
-  {
     href: "/notifications",
     icon: faBell,
     name: "Notifications",
+  },
+  {
+    href: "/logout",
+    icon: faRightFromBracket,
+    name: "Logout",
   },
 ];
 
