@@ -1,33 +1,23 @@
-import { PrismaClient, Role } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-
-const prisma = new PrismaClient();
+import { CreateCommentCommand } from "../../../../lib/commands/CreateCommentCommand";
 
 export async function POST(req: NextRequest) {
   console.log("Request received at /api/comment");
-  const body = await req.json();
 
-  const { eventId, userId, content } = body;
-  console.log("Event ID:", eventId, "User ID:", userId, "Content:", content);
   try {
-    const newComment = await prisma.comment.create({
-      data: {
-        content: content,
-        event: {
-          connect: { id: eventId },
-        },
-        author: {
-          connect: { id: userId },
-        },
-      },
-    });
-    console.log("New comment created:", newComment);
-    return NextResponse.json(newComment);
-  } catch (error) {
-    console.error("Error creating comment:", error);
+    const body = await req.json();
+    console.log("Event ID:", body.eventId, "User ID:", body.userId, "Content:", body.content);
+
+    const command = new CreateCommentCommand(body);
+    const comment = await command.execute();
+
+    console.log("New comment created:", comment);
+    return NextResponse.json(comment);
+  } catch (error: any) {
+    console.error("Error creating comment:", error.message);
     return NextResponse.json(
-      { error: "Failed to create comment" },
-      { status: 500 }
+      { error: error.message || "Failed to create comment" },
+      { status: 400 }
     );
   }
 }

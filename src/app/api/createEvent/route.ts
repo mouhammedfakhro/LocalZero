@@ -1,30 +1,17 @@
 import { NextResponse } from "next/server";
-import prisma from "../../../../lib/prisma";
+import { CreateEventCommand } from "../../../../lib/commands/CreateEventCommand";
 
-export async function POST(NextRequest: Request) {
+export async function POST(req: Request) {
   try {
-    const { title, location, description, isPublic, startDate, endDate, userId } =
-      await NextRequest.json();
-    const event = await prisma.event.create({
-      data: {
-        title: title,
-        location: location,
-        description: description,
-        isPublic: isPublic,
-        startDate: startDate ? new Date(startDate) : null,
-        endDate: endDate ? new Date(endDate) : null,
-        creator: {
-          connect: { id: userId },
-        },
-      },
-    });
-    console.log("Event created:", event);
+    const body = await req.json();
+    const command = new CreateEventCommand(body);
+    const event = await command.execute();
 
     return NextResponse.json(event);
-  } catch (error) {
-    console.error("Error creating event:", error);
+  } catch (error: any) {
+    console.error("Error creating event:", error.message);
     return NextResponse.json(
-      { error: "Error creating event" },
+      { error: error.message || "Error creating event" },
       { status: 500 }
     );
   }

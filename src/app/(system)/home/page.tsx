@@ -1,13 +1,28 @@
 "use client";
 
 import React, { useEffect, useState } from "react";
-import Post from "@/app/components/Post2";
+import Post from "@/app/components/Post";
 import axios from "axios";
 import { Switch } from "@headlessui/react";
 import { getCurrentUserId, userIsOrganizer } from "@/utils";
 
+const Categories = [
+  "Cleanup",
+  "Recycling",
+  "Tree Planting",
+  "Composting",
+  "Energy Saving",
+  "Water Conservation",
+  "Sustainable Travel",
+  "Eco-Education",
+  "Upcycling",
+  "Wildlife Protection",
+  "Gardening",
+  "Zero Waste",
+];
+
 export default function Home() {
-  const [publicPosts, setPublicPosts] = useState(false);
+  const [publicPosts, setPublicPosts] = useState(true);
   const [showNewForm, setShowNewForm] = useState(false);
   const [locations, setLocations] = useState<{ id: number; name: string }[]>(
     []
@@ -18,6 +33,7 @@ export default function Home() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [registerLocation, setRegisterLocation] = useState("");
+  const [category, setCategory] = useState("");
   const [posts, setPosts] = useState<
     {
       title: string;
@@ -57,7 +73,14 @@ export default function Home() {
   }, []);
 
   const handleCreatePost = async () => {
-    if (!titel || !registerLocation || !description || !startDate || !endDate) {
+    if (
+      !titel ||
+      !registerLocation ||
+      !description ||
+      !startDate ||
+      !endDate ||
+      !category
+    ) {
       alert("Please fill in all fields");
       return;
     }
@@ -71,6 +94,7 @@ export default function Home() {
         startDate: startDate,
         endDate: endDate,
         userId: currentUserId,
+        category: category,
       });
       setPosts((prevPosts) => [...prevPosts, response.data]);
       setShowNewForm(false);
@@ -81,8 +105,8 @@ export default function Home() {
   };
 
   const filteredPosts = publicPosts
-  ? posts 
-  : posts.filter((post) => post.isPublic);
+    ? posts
+    : posts.filter((post) => !post.isPublic);
 
   console.log(filteredPosts);
 
@@ -90,7 +114,9 @@ export default function Home() {
     <div className="flex flex-col items-center">
       <div className="flex justify-around space-x-26 items-center mt-3">
         <h1 className="font-bold text-2xl text-black">Community Initiatives</h1>
-        <div className="flex flex-row space-x-5">
+      </div>
+      <div className="flex flex-row items-center justify-center space-x-5 mt-5">
+        <div className="flex items-center justify-center space-x-5">
           <h1 className="text-black">All initiatives</h1>
           <Switch
             checked={publicPosts}
@@ -102,16 +128,16 @@ export default function Home() {
               className="pointer-events-none inline-block size-5 transform rounded-full bg-white shadow-sm ring-0 transition duration-200 ease-in-out group-data-checked:translate-x-5"
             />
           </Switch>
-
-          {isOrganizer && (
-            <button
-              onClick={() => setShowNewForm(true)}
-              className="bg-green-600 rounded-md px-2 py-1 text-white font-bold mb-3 shadow-md cursor-pointer"
-            >
-              Create Post
-            </button>
-          )}
         </div>
+
+        {isOrganizer && (
+          <button
+            onClick={() => setShowNewForm(true)}
+            className="bg-green-600 rounded-md px-2 py-1 text-white font-bold shadow-md cursor-pointer"
+          >
+            Create Post
+          </button>
+        )}
       </div>
       <div className="w-full h-px bg-gray-300 mt-5 px-10" />
 
@@ -160,6 +186,27 @@ export default function Home() {
                 {locations.map((loc) => (
                   <option key={loc.id} value={loc.name}>
                     {loc.name}
+                  </option>
+                ))}
+              </select>
+
+              <label
+                className="block text-sm font-medium mb-1 mt-3"
+                htmlFor="location"
+              >
+                Category
+              </label>
+              <select
+                id="location"
+                className="w-full border rounded px-3 py-2"
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                required
+              >
+                <option value="">Select your Category</option>
+                {Categories.map((cat) => (
+                  <option key={cat} value={cat}>
+                    {cat}
                   </option>
                 ))}
               </select>

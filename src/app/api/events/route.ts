@@ -1,42 +1,21 @@
 import { NextResponse } from "next/server";
-import prisma from "../../../../lib/prisma";
+import { GetEventDetailsCommand } from "../../../../lib/commands/GetEventDetailsCommand";
 
 export async function GET(req: Request) {
-  const { searchParams } = new URL(req.url);
-  const eventIdParam = searchParams.get("eventID");
+  try {
+    const { searchParams } = new URL(req.url);
+    const eventIdParam = searchParams.get("eventID");
+    const eventId = Number(eventIdParam);
 
-  const eventId = Number(eventIdParam);
+    const command = new GetEventDetailsCommand(eventId);
+    const event = await command.execute();
 
-  if (!eventIdParam || isNaN(eventId)) {
+    return NextResponse.json(event);
+  } catch (error: any) {
+    console.error("Error fetching event:", error.message);
     return NextResponse.json(
-      { error: "Missing or invalid eventId" },
+      { error: error.message || "Failed to fetch event." },
       { status: 400 }
     );
   }
-
-  const event = await prisma.event.findUnique({
-    where: { id: eventId },
-    include: {
-      comments: {
-        orderBy: {
-            createdAt: "desc",
-        },
-        include: {
-          author: true,
-          likedBy: true,
-        },
-      },
-      updates: {
-        orderBy: {
-          createdAt: "desc",
-        }
-      }
-    },
-  });
-
-  if (!event) {
-    return NextResponse.json({ error: "Event not found." }, { status: 404 });
-  }
-
-  return NextResponse.json(event);
 }

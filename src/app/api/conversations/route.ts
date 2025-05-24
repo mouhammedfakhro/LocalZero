@@ -1,113 +1,36 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "../../../../lib/prisma";
+import { CreateConversationCommand } from "../../../../lib/commands/CreateConversationCommand";
+import { GetUserConversationsCommand } from "../../../../lib/commands/GetUserConversationsCommand";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { senderId, recipientUsername, message } = body;
+    const command = new CreateConversationCommand(body);
+    const result = await command.execute();
 
-    if (!senderId || !recipientUsername || !message) {
-      return NextResponse.json(
-        { error: "Missing required fields" },
-        { status: 400 }
-      );
-    }
-
-    const recipient = await prisma.user.findFirst({
-      where: { username: recipientUsername },
-    });
-
-    if (!recipient) {
-      return NextResponse.json(
-        { error: "Recipient not found" },
-        { status: 404 }
-      );
-    }
-
-    const sender = await prisma.user.findFirst({
-      where: { id: Number(senderId) },
-    });
-
-    console.log("-------------");
-    console.log(sender);
-    console.log("-------------");
-
-    if (!sender) {
-      return NextResponse.json({ error: "Sender not found" }, { status: 404 });
-    }
-
-    const conversation = await prisma.conversation.create({
-      data: {
-        participants: {
-          connect: [{ id: Number(senderId) }, { id: recipient.id }],
-        },
-      },
-    });
-
-    const newMessage = await prisma.message.create({
-      data: {
-        senderId: Number(senderId),
-        receiverId: recipient.id,
-        message: message,
-        conversationId: conversation.id,
-      },
-    });
-
-    return NextResponse.json({
-      message: "Conversation created successfully",
-      conversationId: conversation.id,
-      initialMessage: newMessage,
-    });
-  } catch (error) {
-    console.error("Error creating conversation:", error);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return NextResponse.json(result);
+  } catch (error: any) {
+    console.error("Error creating conversation:", error.message);
+    return NextResponse.json({ error: error.message }, { status: 400 });
   }
 }
 
 export async function GET(req: NextRequest) {
   try {
-    console.log("Full request URL:", req.url); 
-
     const { searchParams } = new URL(req.url);
     const userIdParam = searchParams.get("currentUserId");
-
-    console.log("userId:", userIdParam); 
-
 
     if (!userIdParam) {
       return NextResponse.json({ error: "Missing userId" }, { status: 400 });
     }
 
     const userId = parseInt(userIdParam);
-    if (isNaN(userId)) {
-      return NextResponse.json({ error: "Invalid userId" }, { status: 400 });
-    }
-
-    const conversations = await prisma.conversation.findMany({
-      where: {
-        participants: {
-          some: {
-            id: userId,
-          },
-        },
-      },
-      include: {
-        participants: true,
-        messages: {
-          orderBy: { createdAt: "asc" },
-        },
-      },
-      orderBy: {
-        updatedAt: "desc",
-      },
-    });
+    const command = new GetUserConversationsCommand(userId);
+    const conversations = await command.execute();
 
     return NextResponse.json(conversations);
-  } catch (error) {
-    console.error("GET /api/conversations error:", error);
-    return NextResponse.json(
-      { error: "Failed to fetch conversations" },
-      { status: 500 }
-    );
+  } catch (error: any) {
+    console.error("GET /api/conversations error:", error.message);
+    return NextResponse.json({ error: error.message }, { status: 400 });
   }
 }

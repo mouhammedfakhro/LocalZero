@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "../../../../lib/prisma";
 import { CreateMessageCommand } from "../../../../lib/commands/CreateMessageCommand";
 import { GetMessagesCommand } from "../../../../lib/commands/GetMessageCommand";
 
@@ -12,8 +11,6 @@ export async function POST(req: NextRequest) {
       receiverId: body.receiverId,
       content: body.content,
     });
-
-    console.log(command);
 
     const message = await command.execute();
     return NextResponse.json(message);
@@ -28,6 +25,7 @@ export async function POST(req: NextRequest) {
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const conversationId = searchParams.get("conversationId");
+  const userId = searchParams.get("userId");
 
   if (!conversationId) {
     return NextResponse.json(

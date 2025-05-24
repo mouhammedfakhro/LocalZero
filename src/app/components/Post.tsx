@@ -20,7 +20,7 @@ export type ExtendedEvent = Prisma.EventGetPayload<{
         likedBy: true;
       };
     };
-    creator: true,
+    creator: true;
     updates: true;
     participations: true;
   };
@@ -34,9 +34,11 @@ export default function Post({ post }: { post: ExtendedEvent }) {
   const [updateInputText, setUpdateInputText] = useState("");
   const currentUserId = getCurrentUserId();
   const username = getCurrentUserName();
-// TODO: SHOW EVENTS THAT ARE IN YOUR NEIGHBOURHOOD OR PUBLIC, DONT SHOW EVENTS THAT ARE NOT IN YOUR NEIGHBOURHOOD
-// 
-  const hasJoined = eventData.participations?.some((p: any) => p.id === currentUserId) || post.participations?.some((p: any) => p.id === 1)
+  // TODO: SHOW EVENTS THAT ARE IN YOUR NEIGHBOURHOOD OR PUBLIC, DONT SHOW EVENTS THAT ARE NOT IN YOUR NEIGHBOURHOOD
+  //
+  const hasJoined =
+    eventData.participations?.some((p: any) => p.id === currentUserId) ||
+    post.participations?.some((p: any) => p.id === 1);
 
   const isOwner = eventData.creatorId === currentUserId;
 
@@ -45,7 +47,6 @@ export default function Post({ post }: { post: ExtendedEvent }) {
       const response = await axios.get(`/api/events?eventID=${post.id}`);
       setEventData(response.data);
       console.log("Fetched posts:", response.data);
-
     } catch (error) {
       console.log("Error re-fetching event: ", error);
     }
@@ -95,7 +96,9 @@ export default function Post({ post }: { post: ExtendedEvent }) {
 
   async function likeComment(commentId: number) {
     try {
-      await axios.put(`/api/likeComment?userId=${currentUserId}&commentId=${commentId}`);
+      await axios.put(
+        `/api/likeComment?userId=${currentUserId}&commentId=${commentId}`
+      );
       await refetchEvent();
     } catch (error) {
       console.log("Error sending comment: ", error);
@@ -117,7 +120,6 @@ export default function Post({ post }: { post: ExtendedEvent }) {
       return next;
     });
   }
-  
 
   return (
     <div className="w-full px-4">
@@ -140,20 +142,17 @@ export default function Post({ post }: { post: ExtendedEvent }) {
             <FontAwesomeIcon icon={faMapPin} className="text-red-500" />
             {eventData.location}
           </span>
-         {/* <span className="flex items-center gap-1">
-            <FontAwesomeIcon icon={faClock} />
-            {formatDate(post.createdAt)}
-          </span> */}
-            {eventData.startDate && eventData.endDate && (
+          {eventData.startDate && eventData.endDate && (
             <span className="flex items-center gap-1 text-sm text-gray-600">
               <FontAwesomeIcon icon={faClock} />
-              {format(new Date(eventData.startDate), "d/M")} - {format(new Date(eventData.endDate), "d/M")}
+              {format(new Date(eventData.startDate), "d/M")} -{" "}
+              {format(new Date(eventData.endDate), "d/M")}
             </span>
           )}
-          
-          
+          <span className="flex items-center gap-1">
+            Category: {eventData.category}
+          </span>
         </div>
-        
 
         <div className="inline-block bg-gray-100 text-gray-700 text-xs font-medium px-2 py-0.5 rounded mb-3">
           <h1>Description</h1>

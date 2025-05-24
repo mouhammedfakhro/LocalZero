@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import prisma from "../../../../lib/prisma";
+import { ToggleCommentLikeCommand } from "../../../../lib/commands/ToggleCommentLikeCommand";
 
 export async function PUT(req: Request) {
   try {
@@ -7,52 +7,22 @@ export async function PUT(req: Request) {
     const userId = searchParams.get("userId");
     const commentId = searchParams.get("commentId");
 
-    if (!userId || !commentId) {
-      return NextResponse.json(
-        { error: "Missing userId or commentId" },
-        { status: 400 }
-      );
-    }
-
     const numericUserId = Number(userId);
     const numericCommentId = Number(commentId);
 
-    const comment = await prisma.comment.findUnique({
-      where: { id: numericCommentId },
-      include: {
-        likedBy: true,
-      },
+    const command = new ToggleCommentLikeCommand({
+      userId: numericUserId,
+      commentId: numericCommentId,
     });
 
-    if (!comment) {
-      return NextResponse.json(
-        { error: "Comment not found" },
-        { status: 404 }
-      );
-    }
-
-    const alreadyLiked = comment.likedBy.some((user) => user.id === numericUserId);
-
-    const updatedComment = await prisma.comment.update({
-      where: { id: numericCommentId },
-      data: {
-        likedBy: {
-          [alreadyLiked ? "disconnect" : "connect"]: {
-            id: numericUserId,
-          },
-        },
-      },
-      include: {
-        likedBy: true,
-      },
-    });
+    const updatedComment = await command.execute();
 
     return NextResponse.json(updatedComment);
-  } catch (error) {
-    console.error("Error toggling like:", error);
+  } catch (error: any) {
+    console.error("Error toggling like:", error.message);
     return NextResponse.json(
-      { error: "Failed to toggle like" },
-      { status: 500 }
+      { error: error.message || "Failed to toggle like" },
+      { status: 400 }
     );
   }
 }

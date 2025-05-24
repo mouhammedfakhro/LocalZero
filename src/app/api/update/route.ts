@@ -1,35 +1,17 @@
-import { PrismaClient } from "@prisma/client";
 import { NextRequest, NextResponse } from "next/server";
-
-const prisma = new PrismaClient();
+import { CreatePostUpdateCommand } from "../../../../lib/commands/CreatePostUpdateCommand";
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { eventId, content, username } = body;
-
-    if (!eventId || !content) {
-      return NextResponse.json(
-        { error: "Missing required fields: eventId or content" },
-        { status: 400 }
-      );
-    }
-
-    const newUpdate = await prisma.postUpdate.create({
-      data: {
-        content,
-        username: username,
-        event: {
-          connect: { id: eventId },
-        },
-      },
-    });
+    const command = new CreatePostUpdateCommand(body);
+    const newUpdate = await command.execute();
 
     return NextResponse.json(newUpdate, { status: 201 });
-  } catch (error) {
-    console.error("Error creating post update:", error);
+  } catch (error: any) {
+    console.error("Error creating post update:", error.message);
     return NextResponse.json(
-      { error: "Internal server error" },
+      { error: error.message || "Internal server error" },
       { status: 500 }
     );
   }
